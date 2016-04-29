@@ -137,3 +137,46 @@ public class TestExcelExport {
     }
 }
 ```
+
+**Download excel file via servlet**
+
+The ExcelUtil exposes output stream to user, so if you need to download excel file via
+servlet, please refer the code snippet below.
+``` java
+    @RequestMapping(value = "/journal/export/{id}", method = RequestMethod.GET)
+    public ResponseEntity<Object> exportJournal(@PathVariable("id") Integer id,
+                                                @RequestParam(value = "pageIdx", required = false, defaultValue = "1") Integer pageIdx,
+                                                @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize,
+                                                HttpServletResponse response) {
+        Map<String, Object> resp = new HashMap<>();
+        Long epochSecond = Instant.now().getEpochSecond();
+        String fileName = DateUtil.getDateStrFromEpochMillisecond(epochSecond*1000, Constants.FILE_NAME_TIME_FORMAT)+ ".xls";
+        try {
+
+            OutputStream os = new FileOutputStream("/tmp/journal" + fileName);
+            ExcelUtil<OpJournal> excelUtil = new ExcelUtil<>(OpJournal.class);
+            excelUtil.exportDataList(dlcSettlementService.getOpJournalList(false,
+                    id,
+                    new PageBounds(pageIdx, pageSize)),
+                    "journal", os, Constants.DATE_FORMAT);
+
+            // download function
+            InputStream is = new BufferedInputStream(new FileInputStream("/tmp/journal" + fileName));
+            byte[] buffer = new byte[16*10240]; // r/w 16KB each time
+
+            response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
+            OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
+            response.setContentType("application/vnd.ms-excel;charset=utf-8");
+            for (int len = 0; (len = is.read(buffer)) > 0; ) {
+                outputStream.write(buffer, 0, len);
+            }
+            outputStream.flush();
+            outputStream.close();
+        } catch (IOException e) {
+            logger.debug(e.getMessage());
+        }
+
+        return ResponseEntity.ok(resp);
+
+    }
+```
