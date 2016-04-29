@@ -17,7 +17,9 @@ file.
   value for easy read, ex 0 translated to 未支付.
   + key - The raw value of data in model
   + value - The value to display in excel
+
 ### 0X01 Dependency
+
 ``` xml
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
