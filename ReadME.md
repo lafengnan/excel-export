@@ -172,6 +172,7 @@ servlet, please refer the code snippet below.
             }
             outputStream.flush();
             outputStream.close();
+            is.close();
         } catch (IOException e) {
             logger.debug(e.getMessage());
         }
