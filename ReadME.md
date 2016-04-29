@@ -30,7 +30,7 @@ file.
 
 ### 0x02 Example
 
-1. Annotate the fields in model definition.
+**Annotate the fields in model definition**
 
 ``` java
 import com.allinmoney.platform.annotation.ExcelAttribute;
@@ -95,7 +95,8 @@ public class Person {
     }
 }
 ```
-2. Using ExcelUtil class to export data to one OutPutStream
+
+**Using ExcelUtil class to export data to one OutPutStream**
 ``` java
 @Test
 public class TestExcelExport {
