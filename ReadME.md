@@ -162,7 +162,7 @@ servlet, please refer the code snippet below.
 
             // download function
             InputStream is = new BufferedInputStream(new FileInputStream("/tmp/journal" + fileName));
-            byte[] buffer = new byte[16*10240]; // r/w 16KB each time
+            byte[] buffer = new byte[1024<<4]; // r/w 16KB each time
 
             response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
             OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
