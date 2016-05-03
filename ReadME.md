@@ -1,5 +1,9 @@
 # Introduction
 
+## Version
+
+Current version is 1.0.1-SNAPSHOT.
+
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
 file.
@@ -7,16 +11,17 @@ file.
 * **ExcelAttribute**
   This annotation is common used to annotate field. With several attributes provided.
   + title(String) - The name of cell header
-  + isMark(Boolean) - The cell would be marked with red color
-  + prompt(String) - The prompt information while mouse over the value
-  + isSum(Boolean) - The value of this field would be summed at last row of the sheet
-  + combo(Array) - The cell would be chosen not input
-  + translate(Annotation) - Details refer @Translate annotation
+  + isMark(Boolean, default *false*) - The cell would be marked with red color
+  + isExport(Boolean, default *true*) - The cell would be exported
+  + prompt(String, default *""*) - The prompt information while mouse over the value
+  + isSum(Boolean, default *false*) - The value of this field would be summed at last row of the sheet
+  + combo(Array, default *[]*) - The cell would be chosen not input
+  + translate(Annotation Array, default *[]*) - Details refer @Translate annotation
 * **Translate**
-  This annotation provides two string value for map one specified value to another literal
-  value for easy read, ex 0 translated to 未支付.
+  This annotation provides two string to map one specified value to another literal
+  value for human read, eg. "0" translated to "未支付".
   + key - The raw value of data in model
-  + value - The value to display in excel
+  + value - The literal string to display in excel
 
 ### 0X01 Dependency
 
@@ -24,7 +29,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
 </dependency>
 ```
 
