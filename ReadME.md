@@ -1,5 +1,9 @@
 # Introduction
 
+## Version
+
+Current version is 1.0.1-SNAPSHOT.
+
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
 file.
@@ -13,10 +17,10 @@ file.
   + combo(Array) - The cell would be chosen not input
   + translate(Annotation) - Details refer @Translate annotation
 * **Translate**
-  This annotation provides two string value for map one specified value to another literal
-  value for easy read, ex 0 translated to 未支付.
+  This annotation provides two string to map one specified value to another literal
+  value for human read, eg. "0" translated to "未支付".
   + key - The raw value of data in model
-  + value - The value to display in excel
+  + value - The literal string to display in excel
 
 ### 0X01 Dependency
 
@@ -24,7 +28,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
 </dependency>
 ```
 
