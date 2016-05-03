@@ -166,33 +166,28 @@ public class ExcelUtil<T> implements Serializable {
                                     SimpleDateFormat sdf = new SimpleDateFormat(fmt);
                                     txtValue = sdf.format(date);
                                 } else {
-                                   txtValue = field.get(data).toString();
+                                    txtValue = field.get(data) == null?"null":field.get(data).toString();
                                 }
 
-                                if (txtValue == null) {
-                                    contentCell.setCellValue("");
-                                } else {
-                                    Map<String, String> map = new HashMap<>();
-                                    if (attr.translate().length > 0) {
-                                        Translate[] translates = attr.translate();
-                                        for (int ix = 0; ix < translates.length; ix++) {
-                                            map.put(translates[ix].key(), translates[ix].value());
-                                        }
+                                Map<String, String> map = new HashMap<>(); // translate map
+                                if (attr.translate().length > 0) {
+                                    Translate[] translates = attr.translate();
+                                    for (int ix = 0; ix < translates.length; ix++) {
+                                        map.put(translates[ix].key(), translates[ix].value());
                                     }
+                                }
 
-                                    Pattern p = Pattern.compile("^//d+(//.//d+)?$");
-                                    Matcher matcher = p.matcher(txtValue);
-                                    if (matcher.matches())
-                                    {
-                                        if (map.containsKey(txtValue)) {
-                                            contentCell.setCellValue(Double.parseDouble(map.get(txtValue)));
-                                        } else {
-                                            contentCell.setCellValue(Double.parseDouble(txtValue));
-                                        }
+                                Pattern p = Pattern.compile("^//d+(//.//d+)?$");
+                                Matcher matcher = p.matcher(txtValue);
+                                if (matcher.matches())
+                                {
+                                    if (map.containsKey(txtValue)) {
+                                        contentCell.setCellValue(Double.parseDouble(map.get(txtValue)));
                                     } else {
-                                        contentCell.setCellValue(map.containsKey(txtValue)?map.get(txtValue):txtValue);
+                                        contentCell.setCellValue(Double.parseDouble(txtValue));
                                     }
-
+                                } else {
+                                    contentCell.setCellValue(map.containsKey(txtValue)?map.get(txtValue):txtValue);
                                 }
 
                             } catch (IllegalAccessException e) {

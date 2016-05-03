@@ -23,7 +23,7 @@ public class TestExcelExport {
         for (int i = 0; i < 100; i++) {
             Person person = new Person();
             person.setId(i);
-            person.setName("西门吹雪 " + i);
+            person.setName(i % 2 == 0?("西门吹雪 " + i):null);
             person.setGender(i % 2);
             person.setAge(new BigDecimal("100.12" + i));
             person.setRemark("醒醒,该上班了.");
