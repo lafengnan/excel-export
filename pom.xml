@@ -26,8 +26,8 @@
 
     <distributionManagement>
         <repository>
-            <id>allinmoney-manage</id>
-            <url>http://nexus.allinmoney.com/content/repositories/allinmoney-manage</url>
+            <id>allinmoney-platform</id>
+            <url>http://nexus.allinmoney.com/content/repositories/allinmoney-platform</url>
         </repository>
          <snapshotRepository>
             <id>snapshots</id>

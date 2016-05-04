@@ -2,7 +2,7 @@
 
 ## Version
 
-Current version is 1.0.1-SNAPSHOT.
+Current version is 1.0.1.
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -29,7 +29,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.1-SNAPSHOT</version>
+  <version>1.0.1</version>
 </dependency>
 ```
 
