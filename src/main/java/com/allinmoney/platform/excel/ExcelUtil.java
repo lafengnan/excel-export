@@ -41,18 +41,19 @@ public class ExcelUtil<T> implements Serializable {
     public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String fmt) {
 
         try {
-
             Field[] fields = cls.getDeclaredFields(); // All fields of one java bean
-            List<Field> validFileds = new LinkedList<>(); // fields annotated with ExcelAttribute
+            List<Field> validFields = new LinkedList<>(); // fields annotated with ExcelAttribute
             for (Field f: fields) {
                 if (f.isAnnotationPresent(ExcelAttribute.class)) {
-                    validFileds.add(f);
+                    validFields.add(f);
                 }
             }
 
             HSSFWorkbook workbook = new HSSFWorkbook();
             double sheetNumbers = Math.ceil(dataList != null?dataList.size():1/MAX_ROW);
-            for (int idx = 0; idx < (dataList.size() % MAX_ROW == 0?dataList.size()/MAX_ROW:dataList.size()/MAX_ROW + 1); idx++) {
+            int sheets = dataList.size() == 0?1:
+                    dataList.size() % MAX_ROW == 0?dataList.size()/MAX_ROW:dataList.size()/MAX_ROW + 1;
+            for (int idx = 0; idx < sheets; idx++) {
             //for (int idx = 0; idx < sheetNumbers; idx++) {
                 HSSFSheet sheet = workbook.createSheet(sheetName + idx);
                 HSSFRow row;
@@ -95,8 +96,8 @@ public class ExcelUtil<T> implements Serializable {
                 markContentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
 
                 // create headers
-                for (int i = 0; i < validFileds.size(); i++) {
-                    Field field = validFileds.get(i);
+                for (int i = 0; i < validFields.size(); i++) {
+                    Field field = validFields.get(i);
                     ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
                     int col = i;
 
@@ -137,8 +138,8 @@ public class ExcelUtil<T> implements Serializable {
                 for (int i = startNo; i < endNo; i++) {
                     row = sheet.createRow(i + 1 - startNo);
                     T data = (T)dataList.get(i);
-                    for (int j = 0; j < validFileds.size(); j++) {
-                        Field field = validFileds.get(j);
+                    for (int j = 0; j < validFields.size(); j++) {
+                        Field field = validFields.get(j);
                         field.setAccessible(true);
                         ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
 
@@ -199,8 +200,8 @@ public class ExcelUtil<T> implements Serializable {
 
                 // create summary row
                 HSSFRow sumRow = sheet.createRow((short)(sheet.getLastRowNum() + 1));
-                for (int i = 0; i < validFileds.size(); i++) {
-                    Field field  = validFileds.get(i);
+                for (int i = 0; i < validFields.size(); i++) {
+                    Field field  = validFields.get(i);
                     ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
                     if (attr.isSum()) {
                         int col = i;
