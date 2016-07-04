@@ -2,10 +2,11 @@
 
 ## Version
 
-Current version is 1.0.2.
+Current version is 1.0.3.
 
 ## Change Log
-2016-06-15 Fix summary overwrite issue.
+* 2016-06-15 Fix summary overwrite issue.
+* 2016-07-04 Fill in empty data if there is no data content.
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
