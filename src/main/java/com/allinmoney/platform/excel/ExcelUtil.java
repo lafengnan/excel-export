@@ -221,7 +221,7 @@ public class ExcelUtil<T> implements Serializable {
                                 }
                             }
                         }
-                        HSSFCell sumCell = sheet.createRow(lastRowNum).createCell(col);
+                        HSSFCell sumCell = sumRow.createCell(col);
                         sumCell.setCellValue(new HSSFRichTextString("合计: " + sum));
                     }
                 }
