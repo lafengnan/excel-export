@@ -31,21 +31,42 @@ public class ExcelUtil<T> implements Serializable {
     private static final short HEADER_FONT_HEIGHT = 14;
     private static final short CONTENT_FONT_HEIGHT = 12;
 
-
     private Class<T> cls;
+
+    private Class<?> view;
 
     public ExcelUtil(Class<T> cls) {
         this.cls = cls;
+        this.view = null;
+    }
+
+    public void setDataView(Class<?> excelView) {
+        this.view = excelView;
     }
 
     public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String fmt) {
-
         try {
             Field[] fields = cls.getDeclaredFields(); // All fields of one java bean
+
             List<Field> validFields = new LinkedList<>(); // fields annotated with ExcelAttribute
             for (Field f: fields) {
                 if (f.isAnnotationPresent(ExcelAttribute.class)) {
-                    validFields.add(f);
+                    ExcelAttribute attr = f.getAnnotation(ExcelAttribute.class);
+                    boolean match = false;
+
+                    if (this.view == null) {
+                        match = true;
+                    } else {
+                        for (Class<?> v:attr.groups()) {
+                            if (v.equals(this.view)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (match) {
+                        validFields.add(f);
+                    }
                 }
             }
 
@@ -167,7 +188,7 @@ public class ExcelUtil<T> implements Serializable {
                                     SimpleDateFormat sdf = new SimpleDateFormat(fmt);
                                     txtValue = sdf.format(date);
                                 } else {
-                                    txtValue = field.get(data) == null?"null":field.get(data).toString();
+                                    txtValue = field.get(data) == null?"":field.get(data).toString();
                                 }
 
                                 Map<String, String> map = new HashMap<>(); // translate map

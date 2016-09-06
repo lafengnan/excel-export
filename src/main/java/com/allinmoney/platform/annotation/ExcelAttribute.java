@@ -16,6 +16,9 @@ public @interface ExcelAttribute {
     // column name in excel
     String title();
 
+    // view group
+    Class<?>[] groups() default {};
+
     // key-value map
     Translate[] translate() default {};
 
