@@ -28,6 +28,9 @@ public @interface ExcelAttribute {
     // prompt info
     String prompt() default "";
 
+    // date format
+    String format() default "yyyy-MM-dd HH:mm:ss";
+
     // only selective columns
     String[] combo() default {};
 
