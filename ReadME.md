@@ -2,11 +2,14 @@
 
 ## Version
 
-Current version is 1.0.3.
+Current version is 1.0.6.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
 * 2016-07-04 Fill in empty data if there is no data content.
+* 2016-09-06 1.04 Add view group annotation.
+* 2016-10-28 1.05 Add new API to support multiple data source exportion.
+* 2016-11-23 1.06 Set column to auto size.
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -21,6 +24,7 @@ file.
   + isSum(Boolean, default *false*) - The value of this field would be summed at last row of the sheet
   + combo(Array, default *[]*) - The cell would be chosen not input
   + translate(Annotation Array, default *[]*) - Details refer @Translate annotation
+  + groups(Array, default *[]*) - If set only annotated view would be exported
 * **Translate**
   This annotation provides two string to map one specified value to another literal
   value for human read, eg. "0" translated to "未支付".
@@ -33,7 +37,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.1</version>
+  <version>1.0.6</version>
 </dependency>
 ```
 

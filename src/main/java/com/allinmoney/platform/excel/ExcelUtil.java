@@ -166,7 +166,8 @@ public class ExcelUtil<T> implements Serializable {
 
                 for (int i = startNo; i < endNo; i++) {
                     row = sheet.createRow(i + 1 - startNo);
-                    T data = (T)dataList.get(i);
+                    sheet.autoSizeColumn(row.getRowNum());
+                    T data = dataList.get(i);
                     for (int j = 0; j < validFields.size(); j++) {
                         Field field = validFields.get(j);
                         field.setAccessible(true);
@@ -221,6 +222,7 @@ public class ExcelUtil<T> implements Serializable {
                                 }
 
                             } catch (IllegalAccessException e) {
+                                e.printStackTrace();
                                 logger.debug(e);
                             }
                         }
@@ -383,6 +385,7 @@ public class ExcelUtil<T> implements Serializable {
                 first = line;
                 for (int i = 0; i < list.size(); i++) {
                     row = sheet.createRow(line);
+                    sheet.autoSizeColumn(row.getRowNum());
                     line++;
                     Object data = list.get(i);
                     for (int j = 0; j < validFields.size(); j++) {
@@ -442,6 +445,7 @@ public class ExcelUtil<T> implements Serializable {
                                 }
 
                             } catch (IllegalAccessException e) {
+                                e.printStackTrace();
                                 logger.debug(e);
                             }
                         }
