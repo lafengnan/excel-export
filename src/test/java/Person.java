@@ -2,6 +2,7 @@ import com.allinmoney.platform.annotation.ExcelAttribute;
 import com.allinmoney.platform.annotation.Translate;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * Created by chris on 16/4/28.
@@ -11,7 +12,7 @@ public class Person {
     @ExcelAttribute(title = "ID", isMark = true)
     private Integer id;
 
-    @ExcelAttribute(title= "name", isMark = false)
+    @ExcelAttribute(title= "姓名", isMark = false)
     private String name;
 
     @ExcelAttribute(title= "年龄", isMark = false, isSum = true)
@@ -23,6 +24,9 @@ public class Person {
 
     @ExcelAttribute(title= "备注", prompt = "辅助信息")
     private String remark;
+
+    @ExcelAttribute(title= "生日", format = "yyyy-MM-dd HH:mm:ss")
+    private Date birthDay;
 
     public String getRemark() {
         return remark;
@@ -62,5 +66,13 @@ public class Person {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Date getBirthDay() {
+        return birthDay;
+    }
+
+    public void setBirthDay(Date birthDay) {
+        this.birthDay = birthDay;
     }
 }

@@ -157,6 +157,7 @@ public class ExcelUtil<T> implements Serializable {
                     if (attr.combo().length > 0) {
                         setHSSFValidation(sheet, attr.combo(), 1, 100, col, col);
                     }
+                    sheet.autoSizeColumn(col);
                 }
 
                 // fill in content
@@ -166,7 +167,6 @@ public class ExcelUtil<T> implements Serializable {
 
                 for (int i = startNo; i < endNo; i++) {
                     row = sheet.createRow(i + 1 - startNo);
-                    sheet.autoSizeColumn(row.getRowNum());
                     T data = dataList.get(i);
                     for (int j = 0; j < validFields.size(); j++) {
                         Field field = validFields.get(j);
@@ -226,6 +226,7 @@ public class ExcelUtil<T> implements Serializable {
                                 logger.debug(e);
                             }
                         }
+                        sheet.autoSizeColumn(col);
                     }
                 }
 
@@ -254,9 +255,9 @@ public class ExcelUtil<T> implements Serializable {
                         }
                         HSSFCell sumCell = sumRow.createCell(col);
                         sumCell.setCellValue(new HSSFRichTextString("合计: " + sum));
+                        sheet.autoSizeColumn(col);
                     }
                 }
-
             }
             os.flush();
             workbook.write(os);
@@ -379,13 +380,13 @@ public class ExcelUtil<T> implements Serializable {
                     if (attr.combo().length > 0) {
                         setHSSFValidation(sheet, attr.combo(), 1, 100, col, col);
                     }
+                    sheet.autoSizeColumn(col);
                 }
 
                 contentFont = workbook.createFont();
                 first = line;
                 for (int i = 0; i < list.size(); i++) {
                     row = sheet.createRow(line);
-                    sheet.autoSizeColumn(row.getRowNum());
                     line++;
                     Object data = list.get(i);
                     for (int j = 0; j < validFields.size(); j++) {
@@ -448,6 +449,7 @@ public class ExcelUtil<T> implements Serializable {
                                 e.printStackTrace();
                                 logger.debug(e);
                             }
+                            sheet.autoSizeColumn(col);
                         }
                     }
                 }
@@ -478,9 +480,9 @@ public class ExcelUtil<T> implements Serializable {
                         }
                         HSSFCell sumCell = sumRow.createCell(col);
                         sumCell.setCellValue(new HSSFRichTextString("合计: " + sum.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString()));
+                        sheet.autoSizeColumn(col);
                     }
                 }
-
                 line=line+delimiter;
             }
 

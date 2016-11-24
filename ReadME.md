@@ -2,14 +2,15 @@
 
 ## Version
 
-Current version is 1.0.6.
+Current version is 1.0.7.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
 * 2016-07-04 Fill in empty data if there is no data content.
-* 2016-09-06 1.04 Add view group annotation.
-* 2016-10-28 1.05 Add new API to support multiple data source exportion.
-* 2016-11-23 1.06 Set column to auto size.
+* 2016-09-06 1.0.4 Add view group annotation.
+* 2016-10-28 1.0.5 Add new API to support multiple data source exportion.
+* 2016-11-23 1.0.6 Set column to auto size.(**Deprecated**)
+* 2016-11-24 1.0.7 fix autosize issue introduced in 1.0.7
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -37,7 +38,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.6</version>
+  <version>1.0.7</version>
 </dependency>
 ```
 
@@ -124,8 +125,9 @@ public class TestExcelExport {
             person.setId(i);
             person.setName("西门吹雪 " + i);
             person.setGender(i % 2);
+            person.setBirthDay(new Date());
             person.setAge(new BigDecimal("100.12" + i));
-            person.setRemark("醒醒,该上班了.");
+            person.setRemark("醒醒,该上班了. 你没看见川普都当总统了，大清朝要亡了吗？");
             persons.add(person);
         }
     }

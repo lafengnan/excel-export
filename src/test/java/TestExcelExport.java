@@ -5,6 +5,7 @@ import org.testng.annotations.Test;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -22,9 +23,10 @@ public class TestExcelExport {
         persons = new LinkedList<>();
         for (int i = 0; i < 100; i++) {
             Person person = new Person();
-            person.setId(i);
-            person.setName(i % 2 == 0?("西门吹雪 " + i):null);
+            person.setId(i * 1000000);
+            person.setName("西门吹雪叶孤城陆小凤东邪西毒南帝北丐中神通");
             person.setGender(i % 2);
+            person.setBirthDay(new Date());
             person.setAge(new BigDecimal("100.12" + i));
             person.setRemark("醒醒,该上班了. 你没看见川普都当总统了，大清朝要亡了吗？");
             persons.add(person);
