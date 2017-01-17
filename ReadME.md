@@ -2,7 +2,7 @@
 
 ## Version
 
-Current version is 1.0.7.
+Current version is 1.0.8-SNAPSHOT.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
@@ -17,9 +17,9 @@ Current version is 1.0.7.
   * Refactor the source code of exportDataList
   * Add two methods to export data list:
     * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, boolean superFlag) {
-    * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt, boolean superFlag) {
+    * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt, boolean superFlag)
   * Add one method to export multiple data list:
-    * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList) {
+    * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList)
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -116,6 +116,20 @@ public class Person {
 
     public void setName(String name) {
         this.name = name;
+    }
+}
+
+public class Employee extends Person {
+
+    @ExcelAttribute(title = "级别", isMark = true, column = "b")
+    private Integer level;
+
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
     }
 }
 ```
