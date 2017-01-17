@@ -12,7 +12,7 @@ public class Person {
     @ExcelAttribute(title = "ID", isMark = true)
     private Integer id;
 
-    @ExcelAttribute(title= "姓名", isMark = false)
+    @ExcelAttribute(title= "姓名", isMark = false, column = "c")
     private String name;
 
     @ExcelAttribute(title= "年龄", isMark = false, isSum = true)

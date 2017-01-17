@@ -11,6 +11,15 @@ Current version is 1.0.7.
 * 2016-10-28 1.0.5 Add new API to support multiple data source exportion.
 * 2016-11-23 1.0.6 Set column to auto size.(**Deprecated**)
 * 2016-11-24 1.0.7 fix autosize issue introduced in 1.0.7
+* 2017-01-17 1.0.8-SNAPSHOT
+  * Extends maximum row from 65535 to 1,048,576 as office 2013 spec
+  * Fix issue of export with super class
+  * Refactor the source code of exportDataList
+  * Add two methods to export data list:
+    * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, boolean superFlag) {
+    * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt, boolean superFlag) {
+  * Add one method to export multiple data list:
+    * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList) {
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -26,6 +35,7 @@ file.
   + combo(Array, default *[]*) - The cell would be chosen not input
   + translate(Annotation Array, default *[]*) - Details refer @Translate annotation
   + groups(Array, default *[]*) - If set only annotated view would be exported
+  + format(String, defautl **) - The date format
 * **Translate**
   This annotation provides two string to map one specified value to another literal
   value for human read, eg. "0" translated to "未支付".
@@ -38,7 +48,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.7</version>
+  <version>1.0.8-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -114,30 +124,46 @@ public class Person {
 ``` java
 @Test
 public class TestExcelExport {
+    private List<Employee> employees;
     private List<Person> persons;
     private static final String FMT = "yyyy-MM-dd";
 
     @BeforeClass
     public void setUp() {
+        employees = new LinkedList<>();
         persons = new LinkedList<>();
         for (int i = 0; i < 100; i++) {
             Person person = new Person();
-            person.setId(i);
-            person.setName("西门吹雪 " + i);
+            Employee employee = new Employee();
+            person.setId(i * 1000000);
+            employee.setId(i * 1000000);
+            person.setName("西门吹雪叶孤城陆小凤东邪西毒南帝北丐中神通");
+            employee.setName("秦皇汉武唐宗宋祖");
             person.setGender(i % 2);
+            employee.setGender(i % 2);
             person.setBirthDay(new Date());
+            employee.setBirthDay(new Date());
             person.setAge(new BigDecimal("100.12" + i));
+            employee.setAge(new BigDecimal("200.12" + i));
             person.setRemark("醒醒,该上班了. 你没看见川普都当总统了，大清朝要亡了吗？");
+            employee.setRemark("一年又过去了，奖金呢？？？");
+            employee.setLevel(i);
             persons.add(person);
+            employees.add(employee);
         }
     }
 
     public void testExport() {
         ExcelUtil<Person> util = new ExcelUtil<>(Person.class);
+        ExcelUtil<Employee> util1 = new ExcelUtil<>(Employee.class);
         FileOutputStream os = null;
         try {
             os = new FileOutputStream("/tmp/test.xls");
-            util.exportDataList(persons, "person", os, FMT);
+            util.exportDataList(persons, "person", os, false);
+            os = new FileOutputStream("/tmp/test-2.xls");
+            util1.exportDataList(employees, "person", os, FMT, true);
+            os = new FileOutputStream("/tmp/test-3.xls");
+            util.exportMultipleDataList("multiple", true, os, employees, persons);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -151,48 +177,4 @@ public class TestExcelExport {
         }
     }
 }
-```
-
-**Download excel file via servlet**
-
-The ExcelUtil exposes output stream to user, so if you need to download excel file via
-servlet, please refer the code snippet below.
-``` java
-    @RequestMapping(value = "/journal/export/{id}", method = RequestMethod.GET)
-    public ResponseEntity<Object> exportJournal(@PathVariable("id") Integer id,
-                                                @RequestParam(value = "pageIdx", required = false, defaultValue = "1") Integer pageIdx,
-                                                @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize,
-                                                HttpServletResponse response) {
-        Map<String, Object> resp = new HashMap<>();
-        Long epochSecond = Instant.now().getEpochSecond();
-        String fileName = DateUtil.getDateStrFromEpochMillisecond(epochSecond*1000, Constants.FILE_NAME_TIME_FORMAT)+ ".xls";
-        try {
-
-            OutputStream os = new FileOutputStream("/tmp/journal" + fileName);
-            ExcelUtil<OpJournal> excelUtil = new ExcelUtil<>(OpJournal.class);
-            excelUtil.exportDataList(dlcSettlementService.getOpJournalList(false,
-                    id,
-                    new PageBounds(pageIdx, pageSize)),
-                    "journal", os, Constants.DATE_FORMAT);
-
-            // download function
-            InputStream is = new BufferedInputStream(new FileInputStream("/tmp/journal" + fileName));
-            byte[] buffer = new byte[1024<<4]; // r/w 16KB each time
-
-            response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
-            OutputStream outputStream = new BufferedOutputStream(response.getOutputStream());
-            response.setContentType("application/vnd.ms-excel;charset=utf-8");
-            for (int len = 0; (len = is.read(buffer)) > 0; ) {
-                outputStream.write(buffer, 0, len);
-            }
-            outputStream.flush();
-            outputStream.close();
-            is.close();
-        } catch (IOException e) {
-            logger.debug(e.getMessage());
-        }
-
-        return ResponseEntity.ok(resp);
-
-    }
 ```

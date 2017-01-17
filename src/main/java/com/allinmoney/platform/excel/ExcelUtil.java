@@ -9,6 +9,7 @@ import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
 import org.apache.poi.ss.util.CellRangeAddressList;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Field;
@@ -17,6 +18,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.allinmoney.platform.excel.ExcelSheet.MAX_ROW;
 
 /**
  * Created by chris on 16/4/27.
@@ -27,7 +30,6 @@ public class ExcelUtil<T> implements Serializable {
 
     private static final Logger logger = Logger.getLogger(ExcelUtil.class);
 
-    private static final int MAX_ROW = 65535;
     private static final short HEADER_FONT_HEIGHT = 14;
     private static final short CONTENT_FONT_HEIGHT = 12;
     private static final int DEFAULT_DELIMITER = 5;
@@ -52,223 +54,53 @@ public class ExcelUtil<T> implements Serializable {
         this.delimiter = delimiter;
     }
 
-    public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String fmt) {
-        try {
-            Field[] fields = cls.getDeclaredFields(); // All fields of one java bean
+    public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, boolean superFlag) {
+        return exportDataList(dataList, sheetName, os, null, superFlag);
+    }
 
-            List<Field> validFields = new LinkedList<>(); // fields annotated with ExcelAttribute
-            for (Field f: fields) {
-                if (f.isAnnotationPresent(ExcelAttribute.class)) {
-                    ExcelAttribute attr = f.getAnnotation(ExcelAttribute.class);
-                    boolean match = false;
+    public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt) {
+        return exportDataList(dataList, sheetName, os, dateFmt, true);
+    }
 
-                    if (this.view == null) {
-                        match = true;
-                    } else {
-                        for (Class<?> v:attr.groups()) {
-                            if (v.equals(this.view)) {
-                                match = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (match) {
-                        validFields.add(f);
-                    }
-                }
-            }
-
-            HSSFWorkbook workbook = new HSSFWorkbook();
-            double sheetNumbers = Math.ceil(dataList != null?dataList.size():1/MAX_ROW);
-            int sheets = dataList.size() == 0?1:
+    public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt, boolean superFlag) {
+        HSSFWorkbook workbook = new HSSFWorkbook();
+        int sheets = dataList.size() == 0?1:
                     dataList.size() % MAX_ROW == 0?dataList.size()/MAX_ROW:dataList.size()/MAX_ROW + 1;
-            for (int idx = 0; idx < sheets; idx++) {
-            //for (int idx = 0; idx < sheetNumbers; idx++) {
-                HSSFSheet sheet = workbook.createSheet(sheetName + idx);
-                HSSFRow row;
-                HSSFCell headerCell;
-                HSSFCell contentCell;
-                row = sheet.createRow(0);
 
-                // set style for normal cell
-                HSSFCellStyle headerCellStyle = workbook.createCellStyle();
-                headerCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
-
-                // Font
-                HSSFFont headerFont = workbook.createFont();
-                headerFont.setFontName("Arail narrow");
-                headerFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-                headerFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
-
-                // set style for content
-                HSSFCellStyle contentCellStyle = workbook.createCellStyle();
-
-                // Font
-                HSSFFont contentFont = workbook.createFont();
-                contentFont.setFontName("Arail narrow");
-                contentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-                contentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
-
-                // Special style for mark
-                HSSFCellStyle markCellStyle = workbook.createCellStyle();
-
-                // Header Font
-                HSSFFont markHeaderFont = workbook.createFont();
-                markHeaderFont.setFontName("Arail narrow");
-                markHeaderFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-                markHeaderFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
-
-                // Content Font
-                HSSFFont markContentFont = workbook.createFont();
-                markContentFont.setFontName("Arail narrow");
-                markContentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
-                markContentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
-
-                // create headers
-                for (int i = 0; i < validFields.size(); i++) {
-                    Field field = validFields.get(i);
-                    ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
-                    int col = i;
-
-                    if (StringUtils.isNotBlank(attr.column())) {
-                        col = getExcelCol(attr.column());
-                    }
-
-                    // create columns
-                    headerCell = row.createCell(col);
-                    if (attr.isMark()) {
-                        markHeaderFont.setColor(HSSFColor.RED.index);
-                        markCellStyle.setFont(markHeaderFont);
-                        headerCell.setCellStyle(markCellStyle);
-                    } else {
-                        headerFont.setColor(HSSFColor.BLACK.index);
-                        headerCellStyle.setFont(headerFont);
-                        headerCell.setCellStyle(headerCellStyle);
-                    }
-
-//                    sheet.setColumnWidth(i, (int)((attr.name().getBytes().length <= 4?4:attr.name().getBytes().length * 1.5 * 256)));
-                    headerCell.setCellType(HSSFCell.CELL_TYPE_STRING);
-                    headerCell.setCellValue(attr.title());
-
-                    if (StringUtils.isNotBlank(attr.prompt())) {
-                        setHSSFPrompt(sheet, "", attr.prompt(), 1, 100, col, col);
-                    }
-
-                    if (attr.combo().length > 0) {
-                        setHSSFValidation(sheet, attr.combo(), 1, 100, col, col);
-                    }
-                    sheet.autoSizeColumn(col);
-                }
-
-                // fill in content
-                contentFont = workbook.createFont();
-                int startNo = idx * MAX_ROW;
-                int endNo = Math.min(startNo + MAX_ROW, dataList == null?0:dataList.size());
-
-                for (int i = startNo; i < endNo; i++) {
-                    row = sheet.createRow(i + 1 - startNo);
-                    T data = dataList.get(i);
-                    for (int j = 0; j < validFields.size(); j++) {
-                        Field field = validFields.get(j);
-                        field.setAccessible(true);
-                        ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
-
-                        int col = j;
-                        if (StringUtils.isNotBlank(attr.column())) {
-                            col = getExcelCol(attr.column());
-                        }
-
-                        if (attr.isExport()) {
-                            contentCell = row.createCell(col);
-                            if (attr.isMark()) {
-                                markContentFont.setColor(HSSFFont.COLOR_RED);
-                                markCellStyle.setFont(contentFont);
-                                contentCell.setCellStyle(markCellStyle);
-                            } else {
-                                contentFont.setColor(HSSFFont.COLOR_NORMAL);
-                                contentCellStyle.setFont(contentFont);
-                                contentCell.setCellStyle(contentCellStyle);
-                            }
-
-                            try {
-                                String txtValue = null;
-                                if (field.get(data) instanceof Date) {
-                                    Date date = (Date) field.get(data);
-                                    SimpleDateFormat sdf = new SimpleDateFormat(fmt);
-                                    txtValue = sdf.format(date);
-                                } else {
-                                    txtValue = field.get(data) == null?"":field.get(data).toString();
-                                }
-
-                                Map<String, String> map = new HashMap<>(); // translate map
-                                if (attr.translate().length > 0) {
-                                    Translate[] translates = attr.translate();
-                                    for (int ix = 0; ix < translates.length; ix++) {
-                                        map.put(translates[ix].key(), translates[ix].value());
-                                    }
-                                }
-
-                                Pattern p = Pattern.compile("^//d+(//.//d+)?$");
-                                Matcher matcher = p.matcher(txtValue);
-                                if (matcher.matches())
-                                {
-                                    if (map.containsKey(txtValue)) {
-                                        contentCell.setCellValue(Double.parseDouble(map.get(txtValue)));
-                                    } else {
-                                        contentCell.setCellValue(Double.parseDouble(txtValue));
-                                    }
-                                } else {
-                                    contentCell.setCellValue(map.containsKey(txtValue)?map.get(txtValue):txtValue);
-                                }
-
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                                logger.debug(e);
-                            }
-                        }
-                        sheet.autoSizeColumn(col);
-                    }
-                }
-
-                // create summary row
-                HSSFRow sumRow = sheet.createRow((short)(sheet.getLastRowNum() + 1));
-                for (int i = 0; i < validFields.size(); i++) {
-                    Field field  = validFields.get(i);
-                    ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
-                    if (attr.isSum()) {
-                        int col = i;
-                        if (StringUtils.isNotBlank(attr.column())) {
-                            col = getExcelCol(attr.column());
-                        }
-                        BigDecimal sum = BigDecimal.ZERO;
-                        int lastRowNum = sheet.getLastRowNum();
-                        for (int j = 1; j < lastRowNum; j++) {
-                            HSSFRow idxRow = sheet.getRow(j);
-                            if (idxRow != null) {
-                                HSSFCell idxCell = idxRow.getCell(col);
-                                if (idxCell != null &&
-                                        idxCell.getCellType() == HSSFCell.CELL_TYPE_STRING &&
-                                        NumberUtils.isNumber(idxCell.getStringCellValue())) {
-                                    sum = sum.add(BigDecimal.valueOf(Double.valueOf(idxCell.getStringCellValue())));
-                                }
-                            }
-                        }
-                        HSSFCell sumCell = sumRow.createCell(col);
-                        sumCell.setCellValue(new HSSFRichTextString("合计: " + sum));
-                        sheet.autoSizeColumn(col);
-                    }
-                }
-            }
-            os.flush();
-            workbook.write(os);
-            os.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new ExcelException(e.getMessage());
+        List<Field> annotatedFields = getAnnotatedFields(superFlag);
+        for (int idx = 0; idx < sheets; idx++) {
+            ExcelSheet sheet = new ExcelSheet(workbook.createSheet(sheetName + idx));
+            sheet.setWorkbook(workbook)
+                    .initStylesAndFonts()
+                    .createHeaders(annotatedFields)
+                    .fillInContent(annotatedFields, dataList, false, idx, dateFmt)
+                    .addSummary(annotatedFields);
         }
+        flushWorkbook(workbook, os);
         return true;
     }
 
+    public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList) {
+        int sheetNo = 0;
+        HSSFWorkbook workbook = new HSSFWorkbook();
+        for (List list : dataList) {
+            if (list.isEmpty())
+                continue;
+
+            Class<?> clz = list.get(0).getClass();
+            List<Field> annotatedFields = getAnnotatedFields(clz, superFlag);
+
+            ExcelSheet sheet = new ExcelSheet(workbook.createSheet(sheetName + sheetNo));
+            sheet.setWorkbook(workbook)
+                    .initStylesAndFonts()
+                    .createHeaders(annotatedFields)
+                    .fillInContent(annotatedFields, list, true, sheetNo, null)
+                    .addSummary(annotatedFields);
+            sheetNo++;
+        }
+        flushWorkbook(workbook, os);
+        return true;
+    }
 
     public boolean exportDataList(String sheetName, OutputStream os, List<?>... dataList) {
         HSSFWorkbook workbook = new HSSFWorkbook();
@@ -530,6 +362,61 @@ public class ExcelUtil<T> implements Serializable {
         HSSFDataValidation validationList = new HSSFDataValidation(regions, constraint);
         sheet.addValidationData(validationList);
         return sheet;
+    }
+
+    private Optional<Field[]> getFieldsOfSuperClass(Class<T> clz) {
+        Optional<Field[]> fields = Optional.empty();
+        if (clz.getClass().getSuperclass() != null) {
+            fields = Optional.of(clz.getClass().getSuperclass().getDeclaredFields());
+        }
+        return fields;
+    }
+
+    private List<Field> getAnnotatedFields(boolean superFlag) {
+        return getAnnotatedFields(cls, superFlag);
+    }
+
+    private List<Field> getAnnotatedFields(Class<?> clz, boolean superFlag) {
+        List<Field> fields = new LinkedList<>();
+        List<Field> annotatedFields = new LinkedList<>();
+        if (superFlag && clz.getSuperclass() != null) {
+            fields.addAll(Arrays.asList(clz.getSuperclass().getDeclaredFields()));
+        }
+        fields.addAll(Arrays.asList(clz.getDeclaredFields()));
+
+        fields.stream()
+                .filter(f->f.isAnnotationPresent(ExcelAttribute.class))
+                .forEach(f->{
+                    boolean match = false;
+                    ExcelAttribute attr = f.getAnnotation(ExcelAttribute.class);
+                    if (this.view == null) {
+                        match = true;
+                    } else {
+                        for (Class<?> v : attr.groups()) {
+                            if (v.equals(this.view)) {
+                                match = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (match) {
+                        annotatedFields.add(f);
+                    }
+                });
+
+        return annotatedFields;
+    }
+
+    private void flushWorkbook(HSSFWorkbook workbook, OutputStream os) throws RuntimeException {
+        try {
+            os.flush();
+            workbook.write(os);
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.info(e.getMessage());
+            throw new ExcelException(e.getMessage());
+        }
     }
 
 }
