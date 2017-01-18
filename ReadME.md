@@ -36,7 +36,7 @@ file.
   + combo(Array, default *[]*) - The cell would be chosen not input
   + translate(Annotation Array, default *[]*) - Details refer @Translate annotation
   + groups(Array, default *[]*) - If set only annotated view would be exported
-  + format(String, defautl **) - The date format
+  + format(String, default *yyyy-MM-dd HH:mm:ss*) - The date format
 * **Translate**
   This annotation provides two string to map one specified value to another literal
   value for human read, eg. "0" translated to "未支付".
