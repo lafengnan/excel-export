@@ -2,15 +2,15 @@
 
 ## Version
 
-Current version is 1.0.8-SNAPSHOT.
+Current version is 1.0.8.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
 * 2016-07-04 Fill in empty data if there is no data content.
 * 2016-09-06 1.0.4 Add view group annotation.
-* 2016-10-28 1.0.5 Add new API to support multiple data source exportion.
+* 2016-10-28 1.0.5 Add new API to support multiple data source exportation.
 * 2016-11-23 1.0.6 Set column to auto size.(**Deprecated**)
-* 2016-11-24 1.0.7 fix autosize issue introduced in 1.0.7
+* 2016-11-24 1.0.7 fix auto size issue introduced in 1.0.7
 * 2017-01-17 1.0.8-SNAPSHOT
   * Extends maximum row from 65535 to 1,048,576 as office 2013 spec
   * Fix issue of export with super class
@@ -20,6 +20,7 @@ Current version is 1.0.8-SNAPSHOT.
     * public boolean exportDataList(List<T> dataList, String sheetName, OutputStream os, String dateFmt, boolean superFlag)
   * Add one method to export multiple data list:
     * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList)
+* 2017-01-18 1.0.8 Update Java document and change version number
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -48,7 +49,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.8-SNAPSHOT</version>
+  <version>1.0.8</version>
 </dependency>
 ```
 

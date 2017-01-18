@@ -362,7 +362,7 @@ public class ExcelSheet {
                 }
             }
             HSSFCell sumCell = sumRow.createCell(col);
-            sumCell.setCellValue(new HSSFRichTextString("合计: " + sum));
+            sumCell.setCellValue(new HSSFRichTextString("合计: " + sum.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString()));
             sheet.autoSizeColumn(col);
         }
         return this;
