@@ -2,7 +2,7 @@
 
 ## Version
 
-Current version is 1.0.8-SNAPSHOT.
+Current version is 1.0.8.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
