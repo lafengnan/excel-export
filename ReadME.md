@@ -2,7 +2,7 @@
 
 ## Version
 
-Current version is 1.0.9-SNAPSHOT.
+Current version is 1.0.9.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
@@ -22,6 +22,7 @@ Current version is 1.0.9-SNAPSHOT.
     * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList)
 * 2017-01-18 1.0.8 Update Java document and change version number
 * 2017-01-20 1.0.9-SNAPSHOT
+* 2017-01-20 1.0.9
   * Fix issue of locating for duplicate specified columns
   * Fix issue of mark font display issue of exportDataList with multiple data source
 
@@ -52,7 +53,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.9-SNAPSHOT</version>
+  <version>1.0.9</version>
 </dependency>
 ```
 
