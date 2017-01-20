@@ -9,13 +9,13 @@ import java.util.Date;
  */
 public class Person {
 
-    @ExcelAttribute(title = "ID", isMark = true)
+    @ExcelAttribute(title = "ID", isMark = true, column = "a")
     private Integer id;
 
     @ExcelAttribute(title= "姓名", isMark = false, column = "c")
     private String name;
 
-    @ExcelAttribute(title= "年龄", isMark = false, isSum = true)
+    @ExcelAttribute(title= "年龄", isMark = false, isSum = true, column = "c")
     private BigDecimal age;
 
     @ExcelAttribute(title = "性别", translate= {@Translate(key = "0", value = "女"),

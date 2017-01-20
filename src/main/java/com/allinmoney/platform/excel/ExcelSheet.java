@@ -4,6 +4,7 @@ import com.allinmoney.platform.annotation.ExcelAttribute;
 import com.allinmoney.platform.annotation.Translate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
 
@@ -32,10 +33,14 @@ public class ExcelSheet {
     private HSSFCellStyle markCellStyle;
     private HSSFWorkbook workbook;
 
+    /**
+     * The constant MAX_ROW.
+     */
     public static final int MAX_ROW = 1_048_576;
     private static final short HEADER_FONT_HEIGHT = 14;
     private static final short CONTENT_FONT_HEIGHT = 12;
     private static final String FONT_NAME = "Arail narrow";
+    private static final Logger logger = Logger.getLogger(ExcelSheet.class);
 
     /**
      * Instantiates a new Excel sheet.
@@ -183,6 +188,7 @@ public class ExcelSheet {
      * @param idx    the idx the field index in fields
      * @return the int
      */
+    @Deprecated
     public int exchangeColumns(List<Field> fields, int idx) {
         Field field = fields.get(idx);
         ExcelAttribute attribute = field.getAnnotation(ExcelAttribute.class);
@@ -205,22 +211,16 @@ public class ExcelSheet {
      * @param fields the fields
      * @return the excel sheet
      */
-    public ExcelSheet createHeaders(List<Field> fields) {
+    public ExcelSheet addHeaders(List<Field> fields) {
         HSSFRow row = sheet.createRow(0); // init row
         for (int i = 0; i < fields.size(); i++) {
-            int col = i;
             Field field = fields.get(i);
             ExcelAttribute attribute = field.getAnnotation(ExcelAttribute.class);
-
-            if (StringUtils.isNotBlank(attribute.column())) {
-                col = ExcelUtil.getExcelCol(attribute.column());
-                if (col != i) {
-                    i = exchangeColumns(fields, i);
-                }
-            }
+            if (!attribute.isExport())
+                continue;
 
             // create columns
-            HSSFCell headerCell = row.createCell(col);
+            HSSFCell headerCell = row.createCell(i);
             if (attribute.isMark()) {
                 headerCell.setCellStyle(markHeaderCellStyle);
             } else {
@@ -231,13 +231,13 @@ public class ExcelSheet {
             headerCell.setCellValue(attribute.title());
 
             if (StringUtils.isNotBlank(attribute.prompt())) {
-                ExcelUtil.setHSSFPrompt(sheet, "提示", attribute.prompt(), 1, 100, col, col);
+                ExcelUtil.setHSSFPrompt(sheet, "提示", attribute.prompt(), 1, 100, i, i);
             }
 
             if (attribute.combo().length > 0) {
-                ExcelUtil.setHSSFValidation(sheet, attribute.combo(), 1, 100, col, col);
+                ExcelUtil.setHSSFValidation(sheet, attribute.combo(), 1, 100, i, i);
             }
-            sheet.autoSizeColumn(col);
+            sheet.autoSizeColumn(i);
         }
         return this;
     }
@@ -245,13 +245,14 @@ public class ExcelSheet {
     /**
      * Fill in content excel sheet.
      *
-     * @param fields   the fields
-     * @param dataList the data list
-     * @param sheetNo  the sheet no
-     * @param dateFmt  the date fmt
+     * @param fields       the fields
+     * @param dataList     the data list
+     * @param multipleFlag the multiple flag
+     * @param sheetNo      the sheet no
+     * @param dateFmt      the date fmt
      * @return the excel sheet
      */
-    public ExcelSheet fillInContent(List<Field> fields, List<?> dataList, boolean multipleFlag, int sheetNo, String dateFmt) {
+    public ExcelSheet addContent(List<Field> fields, List<?> dataList, boolean multipleFlag, int sheetNo, String dateFmt) {
         int startNo = multipleFlag?0:sheetNo * MAX_ROW;
         int endNo = multipleFlag?dataList.size():Math.min(startNo + MAX_ROW, dataList.size());
         if (dataList.size() < startNo)
@@ -270,14 +271,7 @@ public class ExcelSheet {
                 if (!attribute.isExport())
                     continue;
 
-                int col = j;
-                if (StringUtils.isNotBlank(attribute.column())) {
-                    col = ExcelUtil.getExcelCol(attribute.column());
-                    if (col != j) {
-                        j = exchangeColumns(fields, j);
-                    }
-                }
-                contentCell = row.createCell(col);
+                contentCell = row.createCell(j);
                 if (attribute.isMark()) {
                     contentCell.setCellStyle(getMarkCellStyle());
                 } else {
@@ -322,7 +316,7 @@ public class ExcelSheet {
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 } finally {
-                    sheet.autoSizeColumn(col);
+                    sheet.autoSizeColumn(j);
                 }
             }
         }
@@ -344,16 +338,12 @@ public class ExcelSheet {
             if (!attribute.isSum())
                 continue;
 
-            int col = i;
-            if (StringUtils.isNotBlank(attribute.column())) {
-                col = ExcelUtil.getExcelCol(attribute.column());
-            }
             BigDecimal sum = BigDecimal.ZERO;
             int lastRowNum = sheet.getLastRowNum();
             for (int j = 0; j < lastRowNum; j++) {
                 HSSFRow idxRow = sheet.getRow(j);
                 if (idxRow != null) {
-                    HSSFCell idxCell = idxRow.getCell(col);
+                    HSSFCell idxCell = idxRow.getCell(i);
                     if (idxCell != null &&
                             idxCell.getCellType() == HSSFCell.CELL_TYPE_STRING &&
                             NumberUtils.isNumber(idxCell.getStringCellValue())) {
@@ -361,9 +351,9 @@ public class ExcelSheet {
                     }
                 }
             }
-            HSSFCell sumCell = sumRow.createCell(col);
+            HSSFCell sumCell = sumRow.createCell(i);
             sumCell.setCellValue(new HSSFRichTextString("合计: " + sum.setScale(2, BigDecimal.ROUND_HALF_EVEN).toString()));
-            sheet.autoSizeColumn(col);
+            sheet.autoSizeColumn(i);
         }
         return this;
     }

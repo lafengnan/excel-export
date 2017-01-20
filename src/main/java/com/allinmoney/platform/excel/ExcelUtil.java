@@ -18,6 +18,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.allinmoney.platform.excel.ExcelSheet.MAX_ROW;
 
@@ -126,8 +127,8 @@ public class ExcelUtil<T> implements Serializable {
             ExcelSheet sheet = new ExcelSheet(workbook.createSheet(sheetName + idx));
             sheet.setWorkbook(workbook)
                     .initStylesAndFonts()
-                    .createHeaders(annotatedFields)
-                    .fillInContent(annotatedFields, dataList, false, idx, dateFmt)
+                    .addHeaders(annotatedFields)
+                    .addContent(annotatedFields, dataList, false, idx, dateFmt)
                     .addSummary(annotatedFields);
         }
         flushWorkbook(workbook, os);
@@ -157,8 +158,8 @@ public class ExcelUtil<T> implements Serializable {
             ExcelSheet sheet = new ExcelSheet(workbook.createSheet(sheetName + sheetNo));
             sheet.setWorkbook(workbook)
                     .initStylesAndFonts()
-                    .createHeaders(annotatedFields)
-                    .fillInContent(annotatedFields, list, true, sheetNo, null)
+                    .addHeaders(annotatedFields)
+                    .addContent(annotatedFields, list, true, sheetNo, null)
                     .addSummary(annotatedFields);
             sheetNo++;
         }
@@ -186,35 +187,46 @@ public class ExcelUtil<T> implements Serializable {
         HSSFCellStyle headerCellStyle = workbook.createCellStyle();
         headerCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
 
-        // Font
+        // Header Font
         HSSFFont headerFont = workbook.createFont();
         headerFont.setFontName("Arail narrow");
+        headerFont.setColor(HSSFColor.BLACK.index);
         headerFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         headerFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
+        headerCellStyle.setFont(headerFont);
 
         // set style for content
         HSSFCellStyle contentCellStyle = workbook.createCellStyle();
 
-        // Font
+        // Content Font
         HSSFFont contentFont = workbook.createFont();
         contentFont.setFontName("Arail narrow");
+        contentFont.setColor(HSSFFont.COLOR_NORMAL);
         contentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         contentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
+        contentCellStyle.setFont(contentFont);
 
-        // Special style for mark
-        HSSFCellStyle markCellStyle = workbook.createCellStyle();
+        // Mark header style
+        HSSFCellStyle markHeaderCellStyle = workbook.createCellStyle();
+        markHeaderCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
 
-        // Header Font
+        // Mark Header Font
         HSSFFont markHeaderFont = workbook.createFont();
         markHeaderFont.setFontName("Arail narrow");
+        markHeaderFont.setColor(HSSFColor.RED.index);
         markHeaderFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         markHeaderFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
+        markHeaderCellStyle.setFont(markHeaderFont);
 
-        // Content Font
+        // Mark content style
+        HSSFCellStyle markContentCellStyle = workbook.createCellStyle();
+        // Mark Content Font
         HSSFFont markContentFont = workbook.createFont();
         markContentFont.setFontName("Arail narrow");
+        markContentFont.setColor(HSSFFont.COLOR_RED);
         markContentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
         markContentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
+        markContentCellStyle.setFont(markContentFont);
 
         int line = 0;
         int first = 0;
@@ -225,29 +237,7 @@ public class ExcelUtil<T> implements Serializable {
                 }
 
                 Class clazz = list.get(0).getClass();// 获取集合中的对象类型
-                Field[] fields = clazz.getDeclaredFields();// 获取他的字段数组
-
-                List<Field> validFields = new LinkedList<>(); // fields annotated with ExcelAttribute
-                for (Field f: fields) {
-                    if (f.isAnnotationPresent(ExcelAttribute.class)) {
-                        ExcelAttribute attr = f.getAnnotation(ExcelAttribute.class);
-                        boolean match = false;
-
-                        if (this.view == null) {
-                            match = true;
-                        } else {
-                            for (Class<?> v:attr.groups()) {
-                                if (v.equals(this.view)) {
-                                    match = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (match) {
-                            validFields.add(f);
-                        }
-                    }
-                }
+                List<Field> validFields = getAnnotatedFields(clazz, true);
 
                 row = sheet.createRow(line);
                 line++;
@@ -256,20 +246,11 @@ public class ExcelUtil<T> implements Serializable {
                     Field field = validFields.get(i);
                     ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
                     int col = i;
-
-                    if (StringUtils.isNotBlank(attr.column())) {
-                        col = getExcelCol(attr.column());
-                    }
-
                     // create columns
                     headerCell = row.createCell(col);
                     if (attr.isMark()) {
-                        markHeaderFont.setColor(HSSFColor.RED.index);
-                        markCellStyle.setFont(markHeaderFont);
-                        headerCell.setCellStyle(markCellStyle);
+                        headerCell.setCellStyle(markHeaderCellStyle);
                     } else {
-                        headerFont.setColor(HSSFColor.BLACK.index);
-                        headerCellStyle.setFont(headerFont);
                         headerCell.setCellStyle(headerCellStyle);
                     }
 
@@ -299,19 +280,12 @@ public class ExcelUtil<T> implements Serializable {
                         ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
 
                         int col = j;
-                        if (StringUtils.isNotBlank(attr.column())) {
-                            col = getExcelCol(attr.column());
-                        }
 
                         if (attr.isExport()) {
                             contentCell = row.createCell(col);
                             if (attr.isMark()) {
-                                markContentFont.setColor(HSSFFont.COLOR_RED);
-                                markCellStyle.setFont(contentFont);
-                                contentCell.setCellStyle(markCellStyle);
+                                contentCell.setCellStyle(markContentCellStyle);
                             } else {
-                                contentFont.setColor(HSSFFont.COLOR_NORMAL);
-                                contentCellStyle.setFont(contentFont);
                                 contentCell.setCellStyle(contentCellStyle);
                             }
 
@@ -366,9 +340,6 @@ public class ExcelUtil<T> implements Serializable {
                     ExcelAttribute attr = field.getAnnotation(ExcelAttribute.class);
                     if (attr.isSum()) {
                         int col = i;
-                        if (StringUtils.isNotBlank(attr.column())) {
-                            col = getExcelCol(attr.column());
-                        }
                         BigDecimal sum = BigDecimal.ZERO;
                         int lastRowNum = sheet.getLastRowNum();
                         for (int j = first; j < lastRowNum; j++) {
@@ -500,7 +471,72 @@ public class ExcelUtil<T> implements Serializable {
                     }
                 });
 
+        sortFields(annotatedFields);
         return annotatedFields;
+    }
+
+    /**
+     * Some of the fields may be annotated with column attribute, to eliminate
+     * the messy of columns of exportation, fields should be sorted correctly
+     * before exportation.
+     * @param fields the annotated fields to sort
+     */
+    private void sortFields(List<Field> fields) {
+        List<Field> fieldsNoColumn = new LinkedList<>();
+        List<Field> fieldsWithColumn = new LinkedList<>();
+        // store fields into dedicated lists, then free slots
+        for (int i = 0; i < fields.size(); i++) {
+            Field field = fields.get(i);
+            if (field.getAnnotation(ExcelAttribute.class).column().isEmpty()) {
+                fieldsNoColumn.add(field);
+            } else {
+                fieldsWithColumn.add(field);
+            }
+            fields.set(i, null);
+        }
+
+        // sort fields with column
+        fieldsWithColumn.sort((o1, o2) ->
+                o1.getAnnotation(ExcelAttribute.class).column()
+                .compareToIgnoreCase(o2.getAnnotation(ExcelAttribute.class).column()));
+
+        // write back sorted column fields
+        for (int i = 0; i < fieldsWithColumn.size(); i++) {
+            Field field = fieldsWithColumn.get(i);
+            int col = getExcelCol(field.getAnnotation(ExcelAttribute.class).column());
+            if (col < fields.size() && fields.get(col) == null) {
+                fields.set(col, field);
+                fieldsWithColumn.set(i, null);
+            }
+        }
+        // remove all nulls in fieldsWithColumn list
+        fieldsWithColumn = fieldsWithColumn
+                .stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // write back non-columned fields
+        int j = 0;
+        for (int i = 0; j < fieldsNoColumn.size() && i < fields.size(); i++) {
+            if (fields.get(i) == null) {
+                fields.set(i, fieldsNoColumn.get(j));
+                fieldsNoColumn.set(j, null);
+                j++;
+            }
+        }
+
+        // append remains in columned fields list to fields
+        // the remains are the columns that have duplicate
+        // columns in fields or column is too large to store
+        int k = 0;
+        for (int i = 0; k < fieldsWithColumn.size() && i < fields.size(); i++) {
+            if (fields.get(i) == null) {
+                Field field = fieldsWithColumn.get(k);
+                fields.set(i, field);
+                fieldsWithColumn.set(k, null);
+                k++;
+            }
+        }
     }
 
     private void flushWorkbook(HSSFWorkbook workbook, OutputStream os) throws RuntimeException {

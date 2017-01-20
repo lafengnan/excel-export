@@ -2,7 +2,7 @@
 
 ## Version
 
-Current version is 1.0.8.
+Current version is 1.0.9-SNAPSHOT.
 
 ## Change Log
 * 2016-06-15 Fix summary overwrite issue.
@@ -21,6 +21,9 @@ Current version is 1.0.8.
   * Add one method to export multiple data list:
     * public boolean exportMultipleDataList(String sheetName, boolean superFlag, OutputStream os, List<?>... dataList)
 * 2017-01-18 1.0.8 Update Java document and change version number
+* 2017-01-20 1.0.9-SNAPSHOT
+  * Fix issue of locating for duplicate specified columns
+  * Fix issue of mark font display issue of exportDataList with multiple data source
 
 ## HOW TO
 Two annotations are provided to identify which filed would be exported to excel
@@ -49,7 +52,7 @@ file.
 <dependency>
   <groupId>com.allinmoney.platform</groupId>
   <artifactId>excel-export</artifactId>
-  <version>1.0.8</version>
+  <version>1.0.9-SNAPSHOT</version>
 </dependency>
 ```
 

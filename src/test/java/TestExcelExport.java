@@ -55,6 +55,8 @@ public class TestExcelExport {
             util1.exportDataList(employees, "person", os, FMT, true);
             os = new FileOutputStream("/tmp/test-3.xls");
             util.exportMultipleDataList("multiple", true, os, employees, persons);
+            os = new FileOutputStream("/tmp/test-4.xls");
+            util.exportDataList("multiple", os, persons, employees);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
