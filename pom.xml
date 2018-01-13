@@ -18,22 +18,11 @@
     <developers>
         <developer>
             <name>chris</name>
-            <email>panzb@allinmoney.com</email>
-            <organization>allinmoney</organization>
-            <organizationUrl>http://www.allinmoney.com</organizationUrl>
+            <email>panzhongbin@gmail.com</email>
+            <organization>self</organization>
+            <organizationUrl>https://www.gitbook.com/@lafengnan/dashboard</organizationUrl>
         </developer>
     </developers>
-
-    <distributionManagement>
-        <repository>
-            <id>allinmoney-platform</id>
-            <url>http://nexus.allinmoney.com/content/repositories/allinmoney-platform</url>
-        </repository>
-         <snapshotRepository>
-            <id>snapshots</id>
-            <url>http://nexus.allinmoney.com/content/repositories/snapshots</url>
-        </snapshotRepository>
-    </distributionManagement>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -43,7 +32,12 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
-            <version>3.14</version>
+            <version>3.17</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>3.17</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -55,6 +49,13 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.7.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.20</version>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>

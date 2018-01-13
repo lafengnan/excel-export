@@ -4,16 +4,18 @@ import com.allinmoney.platform.annotation.ExcelAttribute;
 import com.allinmoney.platform.annotation.Translate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.hssf.util.HSSFColor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddressList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Serializable;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -22,16 +24,19 @@ import java.util.stream.Collectors;
 
 import static com.allinmoney.platform.excel.ExcelSheet.MAX_ROW;
 
+
 /**
  * Created by chris on 16/4/27.
  *
+ * @author Chris
  * @param <T> the type parameter
  */
 public class ExcelUtil<T> implements Serializable {
 
     private static final long serialVersionId = 551970754610248636L;
 
-    private static final Logger logger = Logger.getLogger(ExcelUtil.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExcelUtil.class);
+    private static final Pattern P = Pattern.compile("^//d+(//.//d+)?$");
 
     private static final short HEADER_FONT_HEIGHT = 14;
     private static final short CONTENT_FONT_HEIGHT = 12;
@@ -149,8 +154,9 @@ public class ExcelUtil<T> implements Serializable {
         int sheetNo = 0;
         HSSFWorkbook workbook = new HSSFWorkbook();
         for (List list : dataList) {
-            if (list.isEmpty())
+            if (list.isEmpty()) {
                 continue;
+            }
 
             Class<?> clz = list.get(0).getClass();
             List<Field> annotatedFields = getAnnotatedFields(clz, withSuperFields);
@@ -165,6 +171,122 @@ public class ExcelUtil<T> implements Serializable {
         }
         flushWorkbook(workbook, os);
         return true;
+    }
+
+    public Map<String, Cell> getAnnotatedCellsMap(String excelFilePath, String sheetName) {
+        final List<Field> fields = getAnnotatedFields(true);
+        Map<String, Cell> headerCellsMap= new HashMap<>();
+        try {
+            FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            Sheet sheet = sheetName == null || sheetName.isEmpty()? workbook.getSheetAt(0):workbook.getSheet(sheetName);
+            Iterator<Row> iterator = sheet.rowIterator();
+            while (iterator.hasNext()) {
+                Row row = iterator.next();
+                Iterator<Cell> cellIterator = row.cellIterator();
+                while (cellIterator.hasNext()) {
+                    Cell cell = cellIterator.next();
+                    if (cell.toString().isEmpty()) {
+                        logger.info("Empty cell at row: " + row.toString() + ",column: " + cell.getColumnIndex());
+                        continue;
+                    }
+                    if (!cell.getCellTypeEnum().equals(CellType.STRING)) {
+                        logger.info("Cell at row: " + row.toString() + ", column: " + cell.getColumnIndex() + " is not string");
+                        continue;
+                    }
+
+                    fields.stream()
+                            .filter(field -> field.getAnnotation(ExcelAttribute.class).title().equals(cell.getStringCellValue()))
+                            .findFirst()
+                            .ifPresent(field -> {
+                                headerCellsMap.putIfAbsent(field.getAnnotation(ExcelAttribute.class).title(), cell);
+                            });
+
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.debug(e.getMessage());
+        } catch (InvalidFormatException e) {
+            logger.debug(e.getMessage());
+        }
+
+        return headerCellsMap;
+    }
+
+    public List<T> importData(String path, String sheetName, String dateFormat) {
+        List<T> dataList = new LinkedList<>();
+        final List<Field> fields = getAnnotatedFields(true);
+        Map<String, Cell> headerCellsMap = getAnnotatedCellsMap(path, sheetName);
+        Integer headerRow = ((Cell)(headerCellsMap.values().toArray()[0])).getRowIndex();
+        try {
+            FileInputStream inputStream = new FileInputStream(new File(path));
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            Sheet sheet = sheetName == null || sheetName.isEmpty()?workbook.getSheetAt(0):workbook.getSheet(sheetName);
+            Iterator<Row> iterator = sheet.rowIterator();
+
+            while (iterator.hasNext()) {
+                Row row = iterator.next();
+                if (row.getRowNum() <= headerRow) {
+                    logger.debug("Skipping unused rows: " + row.getRowNum());
+                    continue;
+                }
+                T data = cls.newInstance();
+                fields.forEach(field -> {
+                    Cell cell = null;
+                    try {
+                        cell = row.getCell(headerCellsMap.get(field.getAnnotation(ExcelAttribute.class).title()).getColumnIndex());
+                    } catch (NullPointerException e) {
+                        logger.warn(field.getAnnotation(ExcelAttribute.class).title() + " is not existing");
+                    }
+
+                    if (cell != null) {
+                        Object[] value = new Object[1];
+                        switch (cell.getCellTypeEnum()) {
+                            case _NONE:
+                            case BLANK:
+                                break;
+                            case STRING:
+                                value[0] = cell.getStringCellValue();
+                                break;
+                            case BOOLEAN:
+                                value[0] = cell.getBooleanCellValue();
+                                break;
+                            case ERROR:
+                                value[0] = "!ERROR!";
+                                break;
+                            case FORMULA:
+                                value[0] = cell.getCellFormula();
+                                break;
+                            case NUMERIC:
+                                if (HSSFDateUtil.isCellDateFormatted(cell)) {
+                                    DateFormat format = new SimpleDateFormat(dateFormat == null || dateFormat.isEmpty()?"yyyyMMdd":dateFormat);
+                                    value[0] = format.format(cell.getDateCellValue());
+                                } else {
+                                    value[0] = String.valueOf(cell.getNumericCellValue());
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                        try {
+                            field.setAccessible(true);
+                            field.set(data, value[0]);
+                        } catch (IllegalAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                dataList.add(data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            logger.debug(e.getMessage());
+        } catch (IllegalAccessException | InstantiationException | InvalidFormatException e) {
+            logger.debug(e.getMessage());
+        }
+
+        return dataList;
     }
 
     /**
@@ -185,13 +307,13 @@ public class ExcelUtil<T> implements Serializable {
 
         // set style for normal cell
         HSSFCellStyle headerCellStyle = workbook.createCellStyle();
-        headerCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
 
         // Header Font
         HSSFFont headerFont = workbook.createFont();
         headerFont.setFontName("Arail narrow");
         headerFont.setColor(HSSFColor.BLACK.index);
-        headerFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        headerFont.setBold(true);
         headerFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
         headerCellStyle.setFont(headerFont);
 
@@ -202,19 +324,19 @@ public class ExcelUtil<T> implements Serializable {
         HSSFFont contentFont = workbook.createFont();
         contentFont.setFontName("Arail narrow");
         contentFont.setColor(HSSFFont.COLOR_NORMAL);
-        contentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        contentFont.setBold(false);
         contentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
         contentCellStyle.setFont(contentFont);
 
         // Mark header style
         HSSFCellStyle markHeaderCellStyle = workbook.createCellStyle();
-        markHeaderCellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+        markHeaderCellStyle.setAlignment(HorizontalAlignment.CENTER);
 
         // Mark Header Font
         HSSFFont markHeaderFont = workbook.createFont();
         markHeaderFont.setFontName("Arail narrow");
         markHeaderFont.setColor(HSSFColor.RED.index);
-        markHeaderFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        markHeaderFont.setBold(true);
         markHeaderFont.setFontHeightInPoints(HEADER_FONT_HEIGHT);
         markHeaderCellStyle.setFont(markHeaderFont);
 
@@ -224,7 +346,7 @@ public class ExcelUtil<T> implements Serializable {
         HSSFFont markContentFont = workbook.createFont();
         markContentFont.setFontName("Arail narrow");
         markContentFont.setColor(HSSFFont.COLOR_RED);
-        markContentFont.setBoldweight(HSSFFont.BOLDWEIGHT_BOLD);
+        markContentFont.setBold(true);
         markContentFont.setFontHeightInPoints(CONTENT_FONT_HEIGHT);
         markContentCellStyle.setFont(markContentFont);
 
@@ -236,7 +358,7 @@ public class ExcelUtil<T> implements Serializable {
                     continue;
                 }
 
-                Class clazz = list.get(0).getClass();// 获取集合中的对象类型
+                Class clazz = list.get(0).getClass();
                 List<Field> validFields = getAnnotatedFields(clazz, true);
 
                 row = sheet.createRow(line);
@@ -254,7 +376,6 @@ public class ExcelUtil<T> implements Serializable {
                         headerCell.setCellStyle(headerCellStyle);
                     }
 
-//                    sheet.setColumnWidth(i, (int)((attr.name().getBytes().length <= 4?4:attr.name().getBytes().length * 1.5 * 256)));
                     headerCell.setCellType(HSSFCell.CELL_TYPE_STRING);
                     headerCell.setCellValue(attr.title());
 
@@ -302,7 +423,7 @@ public class ExcelUtil<T> implements Serializable {
                                     txtValue = field.get(data) == null?"":field.get(data).toString();
                                 }
 
-                                Map<String, String> map = new HashMap<>(); // translate map
+                                Map<String, String> map = new HashMap<>();
                                 if (attr.translate().length > 0) {
                                     Translate[] translates = attr.translate();
                                     for (int ix = 0; ix < translates.length; ix++) {
@@ -310,8 +431,7 @@ public class ExcelUtil<T> implements Serializable {
                                     }
                                 }
 
-                                Pattern p = Pattern.compile("^//d+(//.//d+)?$");
-                                Matcher matcher = p.matcher(txtValue);
+                                Matcher matcher = P.matcher(txtValue);
                                 if (matcher.matches())
                                 {
                                     if (map.containsKey(txtValue)) {
@@ -325,7 +445,7 @@ public class ExcelUtil<T> implements Serializable {
 
                             } catch (IllegalAccessException e) {
                                 e.printStackTrace();
-                                logger.debug(e);
+                                logger.debug(e.getMessage());
                             }
                             sheet.autoSizeColumn(col);
                         }
