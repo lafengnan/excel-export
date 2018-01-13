@@ -179,7 +179,7 @@ public class ExcelUtil<T> implements Serializable {
         try {
             FileInputStream inputStream = new FileInputStream(new File(excelFilePath));
             Workbook workbook = WorkbookFactory.create(inputStream);
-            Sheet sheet = workbook.getSheet(sheetName);
+            Sheet sheet = sheetName == null || sheetName.isEmpty()? workbook.getSheetAt(0):workbook.getSheet(sheetName);
             Iterator<Row> iterator = sheet.rowIterator();
             while (iterator.hasNext()) {
                 Row row = iterator.next();
@@ -214,20 +214,23 @@ public class ExcelUtil<T> implements Serializable {
         return headerCellsMap;
     }
 
-    public List<T> importData(String dir, String fileName, String sheetName, String dateFormat) {
+    public List<T> importData(String path, String sheetName, String dateFormat) {
         List<T> dataList = new LinkedList<>();
         final List<Field> fields = getAnnotatedFields(true);
-        Map<String, Cell> headerCellsMap = getAnnotatedCellsMap(dir + "\\" + fileName, sheetName);
+        Map<String, Cell> headerCellsMap = getAnnotatedCellsMap(path, sheetName);
         Integer headerRow = ((Cell)(headerCellsMap.values().toArray()[0])).getRowIndex();
         try {
-            FileInputStream inputStream = new FileInputStream(new File(dir + "\\" + fileName));
+            FileInputStream inputStream = new FileInputStream(new File(path));
             Workbook workbook = WorkbookFactory.create(inputStream);
-            Sheet sheet = workbook.getSheet(sheetName);
+            Sheet sheet = sheetName == null || sheetName.isEmpty()?workbook.getSheetAt(0):workbook.getSheet(sheetName);
             Iterator<Row> iterator = sheet.rowIterator();
 
             while (iterator.hasNext()) {
                 Row row = iterator.next();
-                if (row.getRowNum() <= headerRow) continue;
+                if (row.getRowNum() <= headerRow) {
+                    logger.debug("Skipping unused rows: " + row.getRowNum());
+                    continue;
+                }
                 T data = cls.newInstance();
                 fields.forEach(field -> {
                     Cell cell = null;
@@ -279,9 +282,7 @@ public class ExcelUtil<T> implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
             logger.debug(e.getMessage());
-        } catch (IllegalAccessException | InstantiationException e) {
-            logger.debug(e.getMessage());
-        } catch (InvalidFormatException e) {
+        } catch (IllegalAccessException | InstantiationException | InvalidFormatException e) {
             logger.debug(e.getMessage());
         }
 

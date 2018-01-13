@@ -1,6 +1,12 @@
 import com.allinmoney.platform.annotation.ExcelAttribute;
 import lombok.Data;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Created by e077173 on 1/10/2018.
  */
@@ -22,12 +28,34 @@ public class Defect {
         private String shortDesc;
     }
 
-    enum Severity {
-        High, Medium, Low
+    public enum Severity {
+        High(0), Medium(1), Low(2);
+        private int code;
+        private Severity(int code) {
+            this.code = code;
+        }
     }
 
-    enum Status {
-        OPEN, WORKING, VERIFY, CLOSED
+    public enum Status {
+        Open(0), Working(1), Verify(2), Closed(3);
+        private int code;
+        private Status(int code) {
+            this.code = code;
+        }
+
+        public static List<Status> unClosedStatusList() {
+            return Arrays.stream(values())
+                    .filter(s -> !s.equals(Closed))
+                    .sorted(Comparator.comparingInt(s2 -> s2.code))
+                    .collect(Collectors.toList());
+        }
+
+        public static List<String> unClosedStatusStrings() {
+            List<String> unclosedList = new LinkedList<>();
+            unClosedStatusList()
+                   .forEach(ss -> unclosedList.add(ss.name()));
+            return unclosedList;
+        }
     }
 
     @ExcelAttribute(title = "NO.")
